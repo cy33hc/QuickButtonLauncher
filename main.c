@@ -9,13 +9,13 @@ static tai_hook_ref_t refs[HOOKS_NUM];
 
 void configInputHandler(SceCtrlData *ctrl) {
 	if (ctrl->buttons & SCE_CTRL_L1 && ctrl->buttons & SCE_CTRL_R1 && ctrl->buttons & SCE_CTRL_TRIANGLE) {
-		sceAppMgrLaunchAppByUri(0xFFFFF, "psgm:play?titleid=VITASHELL");
+		sceAppMgrLaunchAppByUri(0x20000, "psgm:play?titleid=VITASHELL");
 	}
 }
 
 void configInputHandlerNegative(SceCtrlData *ctrl) {
 	if (!(ctrl->buttons & SCE_CTRL_L1) && !(ctrl->buttons & SCE_CTRL_R1) && !(ctrl->buttons & SCE_CTRL_TRIANGLE)) {
-		sceAppMgrLaunchAppByUri(0xFFFFF, "psgm:play?titleid=VITASHELL");
+		sceAppMgrLaunchAppByUri(0x20000, "psgm:play?titleid=VITASHELL");
 	}
 }
 

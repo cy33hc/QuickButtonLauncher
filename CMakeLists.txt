@@ -8,7 +8,7 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
   endif()
 endif()
 
-project(QuickLaunch)
+project(QuickButtonLauncher)
 include("${VITASDK}/share/vita.cmake" REQUIRED)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,-q -Wall -O3 -std=gnu99")
@@ -23,23 +23,22 @@ link_directories(
 
 add_definitions(-DRELEASE)
 
-add_executable(QuickLaunch
+add_executable(QuickButtonLauncher
   main.c
 )
 
-target_link_libraries(QuickLaunch
+target_link_libraries(QuickButtonLauncher
   taihen_stub
   SceLibKernel_stub_weak
   SceCtrl_stub_weak
   SceAppMgr_stub_weak
-  SceLibc_stub_weak
   gcc
 )
 
-set_target_properties(QuickLaunch
+set_target_properties(QuickButtonLauncher
   PROPERTIES LINK_FLAGS "-nostdlib"
 )
 
-vita_create_self(QuickLaunch.suprx QuickLaunch
-  CONFIG ${CMAKE_SOURCE_DIR}/QuickLaunch.yml
+vita_create_self(QuickButtonLauncher.suprx QuickButtonLauncher
+  CONFIG ${CMAKE_SOURCE_DIR}/QuickButtonLauncher.yml
 )
