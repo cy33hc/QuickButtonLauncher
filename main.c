@@ -6,100 +6,182 @@
 static uint8_t current_hook = 0;
 static SceUID hooks[HOOKS_NUM];
 static tai_hook_ref_t refs[HOOKS_NUM];
+static char uri[64];
+static int buttons = 0;
 
-void configInputHandler(SceCtrlData *ctrl) {
-	if (ctrl->buttons & SCE_CTRL_L1 && ctrl->buttons & SCE_CTRL_R1 && ctrl->buttons & SCE_CTRL_TRIANGLE) {
-		sceAppMgrLaunchAppByUri(0x20000, "psgm:play?titleid=VITASHELL");
+void setDefault()
+{
+	sceClibSnprintf(uri, 64, "psgm:play?titleid=VITASHELL");
+	buttons = SCE_CTRL_L1 | SCE_CTRL_R1 | SCE_CTRL_SQUARE;
+}
+
+int str2int(char *str)
+{
+    int temp = 0;
+	int len = sceClibStrnlen(str, 5);
+    for (int i = 0; i < len; i++)
+	{
+        temp = temp * 10 + (str[i] - '0');
+    }
+    return temp;
+}
+
+void loadConfig()
+{
+	char buf[128];
+	sceClibMemset(buf, 0, 128);
+
+	int fd = sceIoOpen("ux0:tai/qblauncher.ini", SCE_O_RDONLY, 0777);
+	if (fd <= 0)
+	{
+		fd = sceIoOpen("ur0:tai/qblauncher.ini", SCE_O_RDONLY, 0777);
+	}
+
+	if (fd <= 0)
+	{
+		setDefault();
+	}
+	else
+	{
+		sceIoRead(fd, buf, 128);
+		sceIoClose(fd);
+
+		// Strip out new line
+		char *p = sceClibStrrchr(buf, '\r');
+		if (p != NULL) *p=0;
+		p = sceClibStrrchr(buf, '\n');
+		if (p != NULL) *p=0;
+
+		p = sceClibStrrchr(buf, '=');
+		if (p == NULL)
+		{
+			setDefault();
+			return;
+		}
+		
+		sceClibSnprintf(uri, 64, "psgm:play?titleid=%s", p+1);		
+		*p=0;
+		while ((p = sceClibStrrchr(buf, ',')) != NULL)
+		{
+			buttons |= str2int(p+1);
+			*p = 0;
+		}
+		buttons |= str2int(buf);
 	}
 }
 
-void configInputHandlerNegative(SceCtrlData *ctrl) {
-	if (!(ctrl->buttons & SCE_CTRL_L1) && !(ctrl->buttons & SCE_CTRL_R1) && !(ctrl->buttons & SCE_CTRL_TRIANGLE)) {
-		sceAppMgrLaunchAppByUri(0x20000, "psgm:play?titleid=VITASHELL");
+void configInputHandler(SceCtrlData *ctrl)
+{
+	if ((ctrl->buttons & buttons) == buttons)
+	{
+		sceAppMgrLaunchAppByUri(0x20000, uri);
+	}
+}
+
+void configInputHandlerNegative(SceCtrlData *ctrl)
+{
+	if ((ctrl->buttons & buttons) != buttons)
+	{
+		sceAppMgrLaunchAppByUri(0x20000, uri);
 	}
 }
 
 // Simplified generic hooking function
-void hookFunction(uint32_t nid, const void *func){
+void hookFunction(uint32_t nid, const void *func)
+{
 	hooks[current_hook] = taiHookFunctionImport(&refs[current_hook],TAI_MAIN_MODULE,TAI_ANY_LIBRARY,nid,func);
 	current_hook++;
 }
 
-int sceCtrlPeekBufferPositive_patched(int port, SceCtrlData *ctrl, int count) {
+int sceCtrlPeekBufferPositive_patched(int port, SceCtrlData *ctrl, int count)
+{
 	int ret = TAI_CONTINUE(int, refs[0], port, ctrl, count);
 	configInputHandler(ctrl);
 	return ret;
 }
 
-int sceCtrlPeekBufferPositive2_patched(int port, SceCtrlData *ctrl, int count) {
+int sceCtrlPeekBufferPositive2_patched(int port, SceCtrlData *ctrl, int count)
+{
 	int ret = TAI_CONTINUE(int, refs[1], port, ctrl, count);
 	configInputHandler(ctrl);
 	return ret;
 }
 
-int sceCtrlReadBufferPositive_patched(int port, SceCtrlData *ctrl, int count) {
+int sceCtrlReadBufferPositive_patched(int port, SceCtrlData *ctrl, int count)
+{
 	int ret = TAI_CONTINUE(int, refs[2], port, ctrl, count);
 	configInputHandler(ctrl);
 	return ret;
 }
 
-int sceCtrlReadBufferPositive2_patched(int port, SceCtrlData *ctrl, int count) {
+int sceCtrlReadBufferPositive2_patched(int port, SceCtrlData *ctrl, int count)
+{
 	int ret = TAI_CONTINUE(int, refs[3], port, ctrl, count);
 	configInputHandler(ctrl);
 	return ret;
 }
 
-int sceCtrlPeekBufferPositiveExt_patched(int port, SceCtrlData *ctrl, int count) {
+int sceCtrlPeekBufferPositiveExt_patched(int port, SceCtrlData *ctrl, int count)
+{
 	int ret = TAI_CONTINUE(int, refs[4], port, ctrl, count);
 	configInputHandler(ctrl);
 	return ret;
 }
 
-int sceCtrlPeekBufferPositiveExt2_patched(int port, SceCtrlData *ctrl, int count) {
+int sceCtrlPeekBufferPositiveExt2_patched(int port, SceCtrlData *ctrl, int count)
+{
 	int ret = TAI_CONTINUE(int, refs[5], port, ctrl, count);
 	configInputHandler(ctrl);
 	return ret;
 }
 
-int sceCtrlReadBufferPositiveExt_patched(int port, SceCtrlData *ctrl, int count) {
+int sceCtrlReadBufferPositiveExt_patched(int port, SceCtrlData *ctrl, int count)
+{
 	int ret = TAI_CONTINUE(int, refs[6], port, ctrl, count);
 	configInputHandler(ctrl);
 	return ret;
 }
 
-int sceCtrlReadBufferPositiveExt2_patched(int port, SceCtrlData *ctrl, int count) {
+int sceCtrlReadBufferPositiveExt2_patched(int port, SceCtrlData *ctrl, int count)
+{
 	int ret = TAI_CONTINUE(int, refs[7], port, ctrl, count);
 	configInputHandler(ctrl);
 	return ret;
 }
 
-int sceCtrlPeekBufferNegative_patched(int port, SceCtrlData *ctrl, int count) {
+int sceCtrlPeekBufferNegative_patched(int port, SceCtrlData *ctrl, int count)
+{
 	int ret = TAI_CONTINUE(int, refs[8], port, ctrl, count);
 	configInputHandlerNegative(ctrl);
 	return ret;
 }
 
-int sceCtrlPeekBufferNegative2_patched(int port, SceCtrlData *ctrl, int count) {
+int sceCtrlPeekBufferNegative2_patched(int port, SceCtrlData *ctrl, int count)
+{
 	int ret = TAI_CONTINUE(int, refs[9], port, ctrl, count);
 	configInputHandlerNegative(ctrl);
 	return ret;
 }
 
-int sceCtrlReadBufferNegative_patched(int port, SceCtrlData *ctrl, int count) {
+int sceCtrlReadBufferNegative_patched(int port, SceCtrlData *ctrl, int count)
+{
 	int ret = TAI_CONTINUE(int, refs[10], port, ctrl, count);
 	configInputHandlerNegative(ctrl);
 	return ret;
 }
 
-int sceCtrlReadBufferNegative2_patched(int port, SceCtrlData *ctrl, int count) {
+int sceCtrlReadBufferNegative2_patched(int port, SceCtrlData *ctrl, int count)
+{
 	int ret = TAI_CONTINUE(int, refs[11], port, ctrl, count);
 	configInputHandlerNegative(ctrl);
 	return ret;
 }
 
 void _start() __attribute__ ((weak, alias ("module_start")));
-int module_start(SceSize argc, const void *args) {
-	
+int module_start(SceSize argc, const void *args)
+{
+	loadConfig();
+
 	// Hooking functions
 	hookFunction(0xA9C3CED6, sceCtrlPeekBufferPositive_patched);
 	hookFunction(0x15F81E8C, sceCtrlPeekBufferPositive2_patched);
@@ -117,13 +199,12 @@ int module_start(SceSize argc, const void *args) {
 	return SCE_KERNEL_START_SUCCESS;
 }
 
-int module_stop(SceSize argc, const void *args) {
-
+int module_stop(SceSize argc, const void *args)
+{
 	// Freeing hooks
 	while (current_hook-- > 0){
 		taiHookRelease(hooks[current_hook], refs[current_hook]);
 	}
 		
-	return SCE_KERNEL_STOP_SUCCESS;
-	
+	return SCE_KERNEL_STOP_SUCCESS;	
 }
