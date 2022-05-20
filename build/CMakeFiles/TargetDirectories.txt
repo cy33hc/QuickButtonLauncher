@@ -1,4 +1,0 @@
-/home/cyee/projects/QuickButtonLauncher/build/CMakeFiles/rebuild_cache.dir
-/home/cyee/projects/QuickButtonLauncher/build/CMakeFiles/edit_cache.dir
-/home/cyee/projects/QuickButtonLauncher/build/CMakeFiles/qblauncher.suprx.dir
-/home/cyee/projects/QuickButtonLauncher/build/CMakeFiles/qblauncher.dir

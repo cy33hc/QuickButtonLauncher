@@ -1,1 +1,0 @@
-/usr/local/vitasdk/bin/arm-vita-eabi-gcc  -Wl,-q -Wl,-q -Wall -O3 -std=gnu99  -Wl,-z,nocopyreloc -nostdlib CMakeFiles/qblauncher.dir/main.c.obj  -o qblauncher   -L/home/cyee/projects/QuickButtonLauncher/build  -ltaihen_stub -lSceLibKernel_stub_weak -lSceCtrl_stub_weak -lSceAppMgr_stub_weak -lSceLibc_stub_weak -lSceIofilemgr_stub_weak -lgcc 
