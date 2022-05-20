@@ -7,7 +7,7 @@ static uint8_t current_hook = 0;
 static SceUID hooks[HOOKS_NUM];
 static tai_hook_ref_t refs[HOOKS_NUM];
 static char uri[64];
-static int buttons = 0;
+static unsigned int buttons = 0;
 
 void setDefault()
 {
@@ -15,13 +15,12 @@ void setDefault()
 	buttons = SCE_CTRL_L1 | SCE_CTRL_R1 | SCE_CTRL_SQUARE;
 }
 
-int str2int(char *str)
+unsigned int str2int(char *str, int len)
 {
-    int temp = 0;
-	int len = sceClibStrnlen(str, 5);
+    unsigned int temp = 0;
     for (int i = 0; i < len; i++)
 	{
-        temp = temp * 10 + (str[i] - '0');
+        temp = (temp * 10) + (str[i] - '0');
     }
     return temp;
 }
@@ -31,22 +30,26 @@ void loadConfig()
 	char buf[128];
 	sceClibMemset(buf, 0, 128);
 
-	int fd = sceIoOpen("ux0:tai/qblauncher.ini", SCE_O_RDONLY, 0777);
-	if (fd <= 0)
+	int in = sceIoOpen("ux0:tai/qblauncher.ini", SCE_O_RDONLY, 0777);
+	if (in <= 0)
 	{
-		fd = sceIoOpen("ur0:tai/qblauncher.ini", SCE_O_RDONLY, 0777);
+		in = sceIoOpen("ur0:tai/qblauncher.ini", SCE_O_RDONLY, 0777);
 	}
 
-	if (fd <= 0)
+	if (in <= 0 )
 	{
-		setDefault();
+		return;
 	}
 	else
 	{
-		sceIoRead(fd, buf, 128);
-		sceIoClose(fd);
+		SceUID out = sceIoOpen("ux0:tai/qblauncher.log", SCE_O_WRONLY | SCE_O_CREAT | SCE_O_TRUNC, 0777);
+		if (out <= 0) return;
+
+		sceIoRead(in, buf, 128);
+		sceIoClose(in);
 
 		// Strip out new line
+		char *pp;
 		char *p = sceClibStrrchr(buf, '\r');
 		if (p != NULL) *p=0;
 		p = sceClibStrrchr(buf, '\n');
@@ -55,18 +58,31 @@ void loadConfig()
 		p = sceClibStrrchr(buf, '=');
 		if (p == NULL)
 		{
-			setDefault();
+			sceIoClose(out);
 			return;
 		}
 		
-		sceClibSnprintf(uri, 64, "psgm:play?titleid=%s", p+1);		
+		sceClibSnprintf(uri, 64, "psgm:play?titleid=%s", p+1);
+		sceIoWrite(out, uri, sceClibStrnlen(uri, 64));
 		*p=0;
+		pp = p;
+		buttons = 0;
 		while ((p = sceClibStrrchr(buf, ',')) != NULL)
 		{
-			buttons |= str2int(p+1);
+			if (pp - p <= 0)
+			{
+				setDefault();
+				sceIoClose(out);
+				return;
+			}
+			buttons = buttons | str2int(p+1, pp-(p+1));
+			sceIoWrite(out, &buttons, sizeof(buttons));
 			*p = 0;
+			pp = p;
 		}
-		buttons |= str2int(buf);
+		buttons = buttons | str2int(buf, sceClibStrnlen(buf, 64));
+		sceIoWrite(out,  &buttons, sizeof(buttons));
+		sceIoClose(out);
 	}
 }
 
@@ -180,6 +196,7 @@ int sceCtrlReadBufferNegative2_patched(int port, SceCtrlData *ctrl, int count)
 void _start() __attribute__ ((weak, alias ("module_start")));
 int module_start(SceSize argc, const void *args)
 {
+	setDefault();
 	loadConfig();
 
 	// Hooking functions
