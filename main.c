@@ -42,9 +42,6 @@ void loadConfig()
 	}
 	else
 	{
-		SceUID out = sceIoOpen("ux0:tai/qblauncher.log", SCE_O_WRONLY | SCE_O_CREAT | SCE_O_TRUNC, 0777);
-		if (out <= 0) return;
-
 		sceIoRead(in, buf, 128);
 		sceIoClose(in);
 
@@ -58,12 +55,10 @@ void loadConfig()
 		p = sceClibStrrchr(buf, '=');
 		if (p == NULL)
 		{
-			sceIoClose(out);
 			return;
 		}
 		
 		sceClibSnprintf(uri, 64, "psgm:play?titleid=%s", p+1);
-		sceIoWrite(out, uri, sceClibStrnlen(uri, 64));
 		*p=0;
 		pp = p;
 		buttons = 0;
@@ -72,23 +67,19 @@ void loadConfig()
 			if (pp - p <= 0)
 			{
 				setDefault();
-				sceIoClose(out);
 				return;
 			}
 			buttons = buttons | str2int(p+1, pp-(p+1));
-			sceIoWrite(out, &buttons, sizeof(buttons));
 			*p = 0;
 			pp = p;
 		}
 		buttons = buttons | str2int(buf, sceClibStrnlen(buf, 64));
-		sceIoWrite(out,  &buttons, sizeof(buttons));
-		sceIoClose(out);
 	}
 }
 
 void configInputHandler(SceCtrlData *ctrl)
 {
-	if ((ctrl->buttons & buttons) == buttons)
+	if (ctrl->buttons == buttons)
 	{
 		sceAppMgrLaunchAppByUri(0x20000, uri);
 	}
@@ -96,7 +87,7 @@ void configInputHandler(SceCtrlData *ctrl)
 
 void configInputHandlerNegative(SceCtrlData *ctrl)
 {
-	if ((ctrl->buttons & buttons) != buttons)
+	if (ctrl->buttons != buttons)
 	{
 		sceAppMgrLaunchAppByUri(0x20000, uri);
 	}
